@@ -8,6 +8,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false)
   const [newNote, setNewNote] = useState({ title: '', body: '', date: '' })
   const [notesList, setNotesList] = useState([])
+  const [formError, setFormError] = useState('');
 
   // Leer notas desde Supabase al montar el componente
   useEffect(() => {
@@ -137,35 +138,41 @@ export default function App() {
                       onClick={() => setShowForm(false)}
                       aria-label="Cerrar"
                     >×</button>
-                    <form onSubmit={e => {
+                    <form onSubmit={async e => {
                       e.preventDefault();
+                      setFormError('');
                       if (!newNote.title) return;
                       let color = 'bg-red-500';
                       if (/hecho|completado|finalizado|entregado/i.test(newNote.title) || /hecho|completado|finalizado|entregado/i.test(newNote.body)) {
                         color = 'bg-green-500';
                       }
                       // Insertar la nueva nota en Supabase
-                      (async () => {
-                        const { data, error } = await supabase
-                          .from('notas')
-                          .insert([
-                            {
-                              title: newNote.title,
-                              body: newNote.body,
-                              date: newNote.date,
-                              color,
-                              sala: sala
-                            }
-                          ])
-                          .select();
-                        if (!error && Array.isArray(data)) {
-                          setNotesList([...notesList, ...data]);
-                        }
-                        setNewNote({ title: '', body: '', date: '' });
-                        setShowForm(false);
-                      })();
+                      const { data, error } = await supabase
+                        .from('notas')
+                        .insert([
+                          {
+                            title: newNote.title,
+                            body: newNote.body,
+                            date: newNote.date,
+                            color,
+                            sala: sala
+                          }
+                        ])
+                        .select();
+                      if (error) {
+                        setFormError('Error al guardar la nota. Verifica los datos o la conexión.');
+                        return;
+                      }
+                      if (Array.isArray(data)) {
+                        setNotesList([...notesList, ...data]);
+                      }
+                      setNewNote({ title: '', body: '', date: '' });
+                      setShowForm(false);
                     }}>
                       <h3 className="text-lg font-semibold mb-4 text-gray-800">Agregar nueva nota</h3>
+                      {formError && (
+                        <div className="mb-3 text-red-600 font-semibold text-sm">{formError}</div>
+                      )}
                       <div className="mb-3">
                         <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Título" value={newNote.title} onChange={e => setNewNote({ ...newNote, title: e.target.value })} required />
                       </div>

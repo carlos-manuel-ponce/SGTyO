@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
-import Tabs from './components/Tabs'
+// ...existing code...
 import NoteCard from './components/NoteCard'
 import ProgressBar from './components/ProgressBar'
 
@@ -37,7 +36,7 @@ export default function App() {
     { value: 'llamados_regulares', label: 'LLAMADOS REGULARES' },
     { value: 'pedidos', label: 'PEDIDOS' }
   ]
-  // Eliminado: notas duplicadas, solo se usa notesList
+  // ...existing code...
 
   const [editNoteIdx, setEditNoteIdx] = useState(null);
   const [editNote, setEditNote] = useState({ title: '', body: '', date: '', time: '' });
@@ -120,7 +119,7 @@ export default function App() {
                   </svg>
                 </button>
                 <div className="flex-1">
-                  {/* Tabs eliminados */}
+                  {/* ...existing code... */}
                 </div>
                 <button
                   className="text-white px-4 py-2 font-semibold shadow card hover:scale-105 transition-transform border-0"

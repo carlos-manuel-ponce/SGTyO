@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
-// ...existing code...
 import NoteCard from './components/NoteCard'
 import ProgressBar from './components/ProgressBar'
 
@@ -9,6 +8,7 @@ export default function App() {
   const [newNote, setNewNote] = useState({ title: '', body: '', date: '' })
   const [notesList, setNotesList] = useState([])
   const [formError, setFormError] = useState('');
+  const [salas, setSalas] = useState([]);
 
   // Leer notas desde Supabase al montar el componente
   useEffect(() => {
@@ -22,6 +22,20 @@ export default function App() {
     }
     fetchNotes();
   }, []);
+
+  // Leer salas desde Supabase al montar el componente
+  useEffect(() => {
+    async function fetchSalas() {
+      const { data, error } = await supabase
+        .from('salas')
+        .select('*');
+      if (!error && Array.isArray(data)) {
+        setSalas(data.map(s => ({ value: s.clave, label: s.nombre, id: s.id })));
+      }
+    }
+    fetchSalas();
+  }, []);
+
   // Cambiar el título de la pestaña del navegador
   if (typeof window !== 'undefined') {
     document.title = 'Sistema de Gestión de Tareas y Objetivos';
@@ -29,18 +43,8 @@ export default function App() {
   const [sala, setSala] = useState('')
   const [showDashboard, setShowDashboard] = useState(true)
 
-  const salas = [
-    { value: 'sistema_jcd', label: 'SISTEMA JCD' },
-    { value: 'contratos', label: 'CONTRATOS' },
-    { value: 'honorarios', label: 'HONORARIOS' },
-    { value: 'llamados_abiertos', label: 'LLAMADOS ABIERTOS' },
-    { value: 'llamados_regulares', label: 'LLAMADOS REGULARES' },
-    { value: 'pedidos', label: 'PEDIDOS' }
-  ]
-  // ...existing code...
-
   const [editNoteIdx, setEditNoteIdx] = useState(null);
-  const [editNote, setEditNote] = useState({ title: '', body: '', date: '', time: '' });
+  const [editNote, setEditNote] = useState({ titulo: '', cuerpo: '', fecha: '', hora: '' });
   return (
     <div className="min-h-dvh bg-white p-4 md:p-6" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <div className="max-w-7xl mx-auto">
@@ -54,56 +58,50 @@ export default function App() {
               {/* Botón de nueva tarea eliminado del dashboard */}
               <h2 className="text-xl font-semibold text-gray-800 mb-4 text-left ml-2">Mis salas</h2>
               {/* Ordenar salas por cantidad de tareas */}
-              {(() => {
-                // Contar tareas por sala
-                const salaCounts = salas.map(s => ({
-                  ...s,
-                  count: notesList.filter(n => n.sala === s.value).length
-                }))
-                // Ordenar descendente por cantidad
-                salaCounts.sort((a, b) => b.count - a.count)
-                return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-10">
-                    {salaCounts.map((s, idx) => {
-                      // Calcular porcentaje completado
-                      const notasSala = notesList.filter(n => n.sala === s.value);
-                      const total = notasSala.length;
-                      const completadas = notasSala.filter(n => {
-                        return /hecho|completado|finalizado|entregado/i.test(n.title) || /hecho|completado|finalizado|entregado/i.test(n.body) || n.color === 'bg-green-500';
-                      }).length;
-                      const porcentaje = total > 0 ? completadas / total : 0;
-                      return (
-                        <div
-                          key={s.value}
-                          className="p-10 flex flex-col items-center justify-center border border-gray-200 shadow-md cursor-pointer relative min-h-[170px] md:min-h-[200px] min-w-[220px] md:min-w-[260px]"
-                          style={{
-                            borderRadius: 0,
-                            backgroundColor: '#1a202c',
-                            transition: 'transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s cubic-bezier(.4,0,.2,1)',
-                          }}
-                          onClick={() => { setSala(s.value); setShowDashboard(false); }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                            e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(30,64,175,0.18)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = '0 4px 16px 0 rgba(30,64,175,0.12)';
-                          }}
-                        >
-                          {/* Corner letter label */}
-                          <span className="absolute top-4 left-4 bg-yellow-400 text-black text-sm font-bold px-3 py-1 shadow" style={{borderRadius:0, letterSpacing: '1px', fontFamily:'sans-serif'}}>{String.fromCharCode(65 + idx)}</span>
-                          <span className="font-semibold text-white text-xl mb-2 text-center" style={{fontFamily:'sans-serif', letterSpacing:'0.5px'}}>{s.label}</span>
-                          <span className="text-sm text-white bg-transparent px-3 py-1 mb-2 text-center" style={{borderRadius:0, fontFamily:'sans-serif'}}>{s.count} tareas</span>
-                          <div className="mt-6 flex justify-center w-full">
-                            <ProgressBar value={notasSala} />
-                          </div>
+              {/* Mostrar las salas ordenadas por cantidad de tareas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-10">
+                {salas
+                  .map(s => ({
+                    ...s,
+                    count: notesList.filter(n => n.sala_id === s.id).length
+                  }))
+                  .sort((a, b) => b.count - a.count)
+                  .map((s, idx) => {
+                    const notasSala = notesList.filter(n => n.sala_id === s.id);
+                    const total = notasSala.length;
+                    const completadas = notasSala.filter(n => {
+                      return /hecho|completado|finalizado|entregado/i.test(n.titulo) || /hecho|completado|finalizado|entregado/i.test(n.cuerpo) || n.color === 'bg-green-500';
+                    }).length;
+                    return (
+                      <div
+                        key={s.value}
+                        className="p-10 flex flex-col items-center justify-center border border-gray-200 shadow-md cursor-pointer relative min-h-[170px] md:min-h-[200px] min-w-[220px] md:min-w-[260px]"
+                        style={{
+                          borderRadius: 0,
+                          backgroundColor: '#1a202c',
+                          transition: 'transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s cubic-bezier(.4,0,.2,1)',
+                        }}
+                        onClick={() => { setSala(s.value); setShowDashboard(false); }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(30,64,175,0.18)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 16px 0 rgba(30,64,175,0.12)';
+                        }}
+                      >
+                        {/* Corner letter label */}
+                        <span className="absolute top-4 left-4 bg-yellow-400 text-black text-sm font-bold px-3 py-1 shadow" style={{borderRadius:0, letterSpacing: '1px', fontFamily:'sans-serif'}}>{String.fromCharCode(65 + idx)}</span>
+                        <span className="font-semibold text-white text-xl mb-2 text-center" style={{fontFamily:'sans-serif', letterSpacing:'0.5px'}}>{s.label}</span>
+                        <span className="text-sm text-white bg-transparent px-3 py-1 mb-2 text-center" style={{borderRadius:0, fontFamily:'sans-serif'}}>{s.count} tareas</span>
+                        <div className="mt-6 flex justify-center w-full">
+                          <ProgressBar value={notasSala} />
                         </div>
-                      );
-                    })}
-                  </div>
-                )
-              })()}
+                      </div>
+                    );
+                  })}
+              </div>
             </section>
           ) : (
             <section className="mt-8">
@@ -146,16 +144,19 @@ export default function App() {
                       if (/hecho|completado|finalizado|entregado/i.test(newNote.title) || /hecho|completado|finalizado|entregado/i.test(newNote.body)) {
                         color = 'bg-green-500';
                       }
-                      // Insertar la nueva nota en Supabase
+                      // Buscar el id de la sala seleccionada
+                      const salaObj = salas.find(s => s.value === sala);
+                      const sala_id = salaObj ? salaObj.id : null;
+                      // Insertar la nueva nota en Supabase con los campos correctos
                       const { data, error } = await supabase
                         .from('notas')
                         .insert([
                           {
-                            title: newNote.title,
-                            body: newNote.body,
-                            date: newNote.date,
+                            titulo: newNote.title,
+                            cuerpo: newNote.body,
+                            fecha: newNote.date,
                             color,
-                            sala: sala
+                            sala_id: sala_id
                           }
                         ])
                         .select();
@@ -188,12 +189,15 @@ export default function App() {
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {notesList.filter(n => sala === '' || n.sala === sala).map((n, i) => {
+                {notesList.map((n, i) => {
                   // Solo rojo y verde
                   let color = 'bg-red-500';
-                  if (/hecho|completado|finalizado|entregado/i.test(n.title) || /hecho|completado|finalizado|entregado/i.test(n.body)) {
+                  if (/hecho|completado|finalizado|entregado/i.test(n.titulo) || /hecho|completado|finalizado|entregado/i.test(n.cuerpo)) {
                     color = 'bg-green-500';
                   }
+                  // Filtrar por sala seleccionada
+                  const salaObj = salas.find(s => s.value === sala);
+                  if (sala !== '' && n.sala_id !== (salaObj ? salaObj.id : null)) return null;
                   return (
                     <div key={i} onClick={() => {
                       setEditNoteIdx(i);
@@ -221,15 +225,15 @@ export default function App() {
                 // Actualizar nota y color (solo rojo y verde)
                 const updatedNotes = [...notesList];
                 let color = 'bg-red-500';
-                if (/hecho|completado|finalizado|entregado/i.test(editNote.title) || /hecho|completado|finalizado|entregado/i.test(editNote.body)) {
+                if (/hecho|completado|finalizado|entregado/i.test(editNote.titulo) || /hecho|completado|finalizado|entregado/i.test(editNote.cuerpo)) {
                   color = 'bg-green-500';
                 }
                 updatedNotes[editNoteIdx] = {
                   ...updatedNotes[editNoteIdx],
-                  title: editNote.title,
-                  body: editNote.body,
-                  date: editNote.date,
-                  time: editNote.time,
+                  titulo: editNote.titulo,
+                  cuerpo: editNote.cuerpo,
+                  fecha: editNote.fecha,
+                  hora: editNote.hora,
                   color
                 };
                 setNotesList(updatedNotes);
@@ -237,16 +241,16 @@ export default function App() {
               }}>
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Editar nota</h3>
                 <div className="mb-3">
-                  <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Título" value={editNote.title} onChange={e => setEditNote({ ...editNote, title: e.target.value })} required />
+                  <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Título" value={editNote.titulo || ''} onChange={e => setEditNote({ ...editNote, titulo: e.target.value })} required />
                 </div>
                 <div className="mb-3">
-                  <textarea className="w-full border rounded-lg px-3 py-2" placeholder="Descripción" value={editNote.body} onChange={e => setEditNote({ ...editNote, body: e.target.value })} />
+                  <textarea className="w-full border rounded-lg px-3 py-2" placeholder="Descripción" value={editNote.cuerpo || ''} onChange={e => setEditNote({ ...editNote, cuerpo: e.target.value })} />
                 </div>
                 <div className="mb-3">
-                  <input type="date" className="border rounded-lg px-3 py-2" value={editNote.date} onChange={e => setEditNote({ ...editNote, date: e.target.value })} />
+                  <input type="date" className="border rounded-lg px-3 py-2" value={editNote.fecha || ''} onChange={e => setEditNote({ ...editNote, fecha: e.target.value })} />
                 </div>
                 <div className="mb-3">
-                  <input type="text" className="border rounded-lg px-3 py-2" placeholder="Hora y día" value={editNote.time} onChange={e => setEditNote({ ...editNote, time: e.target.value })} />
+                  <input type="text" className="border rounded-lg px-3 py-2" placeholder="Hora y día" value={editNote.hora || ''} onChange={e => setEditNote({ ...editNote, hora: e.target.value })} />
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Guardar cambios</button>

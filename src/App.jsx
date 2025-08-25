@@ -109,7 +109,10 @@ export default function App() {
                 <button
                   className="mr-4 bg-gray-900 text-white shadow-lg font-bold text-2xl flex items-center justify-center w-12 h-12 border-0"
                   style={{ borderRadius: '50%', fontFamily: 'sans-serif', minWidth: '48px', minHeight: '48px', boxShadow: '0 4px 16px 0 rgba(30,64,175,0.12)' }}
-                  onClick={() => { setShowDashboard(true); setSala(''); }}
+                  onClick={() => {
+                    setSala(''); // Limpiar filtro de sala
+                    setShowDashboard(true);
+                  }}
                   aria-label="Volver al inicio"
                 >
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">

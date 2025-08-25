@@ -144,15 +144,26 @@ export default function App() {
                       if (/hecho|completado|finalizado|entregado/i.test(newNote.title) || /hecho|completado|finalizado|entregado/i.test(newNote.body)) {
                         color = 'bg-green-500';
                       }
-                      setNotesList([...notesList, {
-                        title: newNote.title,
-                        body: newNote.body,
-                        date: newNote.date,
-                        color,
-                        sala: sala
-                      }]);
-                      setNewNote({ title: '', body: '', date: '' });
-                      setShowForm(false);
+                      // Insertar la nueva nota en Supabase
+                      (async () => {
+                        const { data, error } = await supabase
+                          .from('notas')
+                          .insert([
+                            {
+                              title: newNote.title,
+                              body: newNote.body,
+                              date: newNote.date,
+                              color,
+                              sala: sala
+                            }
+                          ])
+                          .select();
+                        if (!error && Array.isArray(data)) {
+                          setNotesList([...notesList, ...data]);
+                        }
+                        setNewNote({ title: '', body: '', date: '' });
+                        setShowForm(false);
+                      })();
                     }}>
                       <h3 className="text-lg font-semibold mb-4 text-gray-800">Agregar nueva nota</h3>
                       <div className="mb-3">

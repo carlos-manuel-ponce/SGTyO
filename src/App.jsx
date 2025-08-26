@@ -195,18 +195,25 @@ export default function App() {
                 {notesList.map((n, i) => {
                   // Solo rojo y verde
                   let color = 'bg-red-500';
-                  if (/hecho|completado|finalizado|entregado/i.test(n.titulo) || /hecho|completado|finalizado|entregado/i.test(n.cuerpo)) {
+                  if (/hecho|completado|finalizado|entregado/i.test(n.titulo) || /hecho|completado|finalizado|entregado/i.test(n.cuerpo) || n.color === 'bg-green-500') {
                     color = 'bg-green-500';
                   }
                   // Filtrar por sala seleccionada
                   const salaObj = salas.find(s => s.value === sala);
                   if (sala !== '' && n.sala_id !== (salaObj ? salaObj.id : null)) return null;
+                  // Adaptar los props para NoteCard
                   return (
                     <div key={i} onClick={() => {
                       setEditNoteIdx(i);
                       setEditNote({ ...n });
                     }} style={{ cursor: 'pointer' }}>
-                      <NoteCard {...n} color={color} />
+                      <NoteCard
+                        title={n.titulo}
+                        body={n.cuerpo}
+                        date={n.fecha}
+                        hora={n.hora}
+                        color={color}
+                      />
                     </div>
                   );
                 })}
